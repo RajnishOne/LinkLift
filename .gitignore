@@ -24,7 +24,10 @@ app/google-services.json
 *.p12
 *.pepk
 
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
 # Local release outputs (use Play Console / CI artifacts instead)
 /app/release/
-
-
