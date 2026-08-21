@@ -1,4 +1,4 @@
-name: Release Build
+name: F-Droid & GitHub APK Release
 
 on:
   push:
