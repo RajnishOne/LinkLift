@@ -1,0 +1,9 @@
+## Location of the Android SDK.
+# On macOS / Linux:
+# sdk.dir=/Users/username/Library/Android/sdk
+# On Windows:
+# sdk.dir=C\:\\Users\\username\\AppData\\Local\\Android\\Sdk
+
+## (Optional) Custom Python 3.10 executable path for Chaquopy build:
+# python.path=/opt/homebrew/bin/python3.10
+
