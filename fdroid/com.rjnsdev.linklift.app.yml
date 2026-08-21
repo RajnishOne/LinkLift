@@ -14,11 +14,12 @@ Repo: https://github.com/RajnishOne/LinkLift.git
 Builds:
   - versionName: '2.6'
     versionCode: 16
-    commit: e23794c6a7555eb74748837374dfafddb2b33d80
+    commit: ab1d732c46627ece8a610019ceac93fa1f32cc0b
     subdir: app
     gradle:
       - yes
     binaries: https://github.com/RajnishOne/LinkLift/releases/download/v2.6/app-release.apk
+
 
 AllowedAPKSigningKeys: 647060481d45eebe02328a07c42c786faff4735cb6aaa6dd5ca18808bc25119e
 
