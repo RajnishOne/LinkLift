@@ -1,6 +1,5 @@
 Categories:
   - Multimedia
-  - Internet
 License: MIT
 AuthorName: Rajnish Sharma
 SourceCode: https://github.com/RajnishOne/LinkLift
@@ -9,8 +8,8 @@ Changelog: https://github.com/RajnishOne/LinkLift/releases
 
 AutoName: LinkLift
 Summary: Fast, private media downloader and extractor
-
 Description: |-
+
   LinkLift is a modern, privacy-focused media downloader and extractor for Android.
   It extracts, previews, and downloads video, audio, and images from YouTube, Instagram,
   TikTok, X/Twitter, Reddit, Pinterest, SoundCloud, and other supported platforms.
