@@ -18,6 +18,13 @@ google-services.json
 app/google-services.json
 .kotlin
 
+# Keystore and signing files
+*.jks
+*.keystore
+*.p12
+*.pepk
+
 # Local release outputs (use Play Console / CI artifacts instead)
 /app/release/
+
 
