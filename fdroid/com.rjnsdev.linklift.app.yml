@@ -7,19 +7,6 @@ IssueTracker: https://github.com/RajnishOne/LinkLift/issues
 Changelog: https://github.com/RajnishOne/LinkLift/releases
 
 AutoName: LinkLift
-Summary: Fast, private media downloader and extractor
-Description: |-
-
-  LinkLift is a modern, privacy-focused media downloader and extractor for Android.
-  It extracts, previews, and downloads video, audio, and images from YouTube, Instagram,
-  TikTok, X/Twitter, Reddit, Pinterest, SoundCloud, and other supported platforms.
-
-  Features:
-  * Stream merging with native MediaMuxer for high-definition 1080p/4K downloads
-  * Built-in media player with ExoPlayer/Media3
-  * Batch and playlist extraction and downloads
-  * System share sheet integration
-  * 100% tracker-free with zero telemetry
 
 RepoType: git
 Repo: https://github.com/RajnishOne/LinkLift.git
@@ -27,10 +14,13 @@ Repo: https://github.com/RajnishOne/LinkLift.git
 Builds:
   - versionName: '2.6'
     versionCode: 16
-    commit: v2.6
+    commit: e23794c6a7555eb74748837374dfafddb2b33d80
     subdir: app
     gradle:
       - yes
+    binaries: https://github.com/RajnishOne/LinkLift/releases/download/v2.6/app-release.apk
+
+AllowedAPKSigningKeys: 647060481d45eebe02328a07c42c786faff4735cb6aaa6dd5ca18808bc25119e
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
