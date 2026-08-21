@@ -1,0 +1,105 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name (e.g. v2.7)'
+        required: true
+        default: 'v2.7'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build Signed APK & Create GitHub Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Set up Python 3.13 (for Chaquopy build requirements)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Decode Release Keystore & Configure Signing
+        if: env.KEYSTORE_BASE64 != ''
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          mkdir -p keystore
+          echo "$KEYSTORE_BASE64" | base64 --decode > keystore/upload-keystore.jks
+          cat <<EOF > key.properties
+          storeFile=keystore/upload-keystore.jks
+          storePassword=$KEYSTORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          EOF
+
+      - name: Grant execute permission for Gradle wrapper
+        run: chmod +x gradlew
+
+      - name: Run Unit Tests
+        run: ./gradlew testDebugUnitTest --no-daemon
+
+      - name: Build Release APK
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Extract Release Notes from Fastlane Changelog
+        id: changelog
+        run: |
+          TAG_NAME="${{ github.ref_name }}"
+          if [ -z "$TAG_NAME" ] || [ "$TAG_NAME" = "main" ]; then
+            TAG_NAME="${{ github.event.inputs.tag_name }}"
+          fi
+          
+          # Find latest fastlane changelog file
+          LATEST_CHANGELOG=$(ls -v fastlane/metadata/android/en-US/changelogs/*.txt 2>/dev/null | tail -n 1)
+          if [ -f "$LATEST_CHANGELOG" ]; then
+            echo "Found changelog: $LATEST_CHANGELOG"
+            echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+            cat "$LATEST_CHANGELOG" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+            echo "Release $TAG_NAME" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create GitHub Release and Upload APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name || github.event.inputs.tag_name }}
+          name: LinkLift ${{ github.ref_name || github.event.inputs.tag_name }}
+          body: |
+            ## LinkLift ${{ github.ref_name || github.event.inputs.tag_name }}
+            
+            ### 📝 What's New
+            ${{ steps.changelog.outputs.CHANGELOG }}
+            
+            ---
+            *Built and signed automatically by GitHub Actions.*
+          files: |
+            app/build/outputs/apk/release/app-release.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
