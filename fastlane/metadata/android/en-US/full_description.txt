@@ -1,0 +1,11 @@
+LinkLift is a native Android application built with Jetpack Compose and Material 3 that lets you analyze, preview, and download high-resolution videos, audio tracks, and images from supported web links and social media platforms.
+
+Powered by an embedded Python runtime via Chaquopy, LinkLift leverages yt-dlp and Instaloader on-device combined with native MediaMuxer stream merging for combining separate high-definition video and audio streams seamlessly.
+
+Key Features:
+- Multi-Platform Support: Extract media from YouTube, Instagram (posts, reels, carousels), TikTok, X/Twitter, Reddit, Pinterest, SoundCloud, Vimeo, and other sites supported by yt-dlp.
+- Stream Merging (MediaMuxer): Downloads separate video and audio streams in a foreground service and multiplexes them locally into standard MP4/WebM files.
+- In-App Fullscreen Player: Built-in media player with gesture controls, playback speed controls, and video quality selection.
+- Batch & Playlist Downloads: Expand playlists and channels, preview individual entries, and queue bulk downloads.
+- System Share Sheet Integration: Share any media link directly from your browser or social media apps into LinkLift.
+- 100% Tracker-Free: Zero Google Play Services dependencies, zero analytics SDKs, and complete privacy.

@@ -1,0 +1,6 @@
+- Initial public open-source release (v2.6)
+- Multi-platform extraction powered by embedded Python 3.10, yt-dlp, and Instaloader
+- Dual-stream audio & video muxing via foreground service and MediaMuxer
+- In-app media player with AndroidX Media3 (ExoPlayer)
+- Batch & playlist downloads with progress tracking
+- 100% tracker-free architecture
