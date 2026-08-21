@@ -15,7 +15,7 @@ Binaries: https://github.com/RajnishOne/LinkLift/releases/download/v%v/app-relea
 Builds:
   - versionName: '2.6'
     versionCode: 16
-    commit: 53554d7b21d31c301650f28d9d2f389ff76fdec5
+    commit: 4d92b083dc63b18d104bdf3bdda85487420d6dcc
     subdir: app
     gradle:
       - yes
