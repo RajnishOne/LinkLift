@@ -94,35 +94,22 @@ android {
 
 
 
-fun detectPythonVersion(pythonPath: String): String {
-    return try {
-        val process = ProcessBuilder(pythonPath, "-c", "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-            .redirectErrorStream(true)
-            .start()
-        val version = process.inputStream.bufferedReader().readText().trim()
-        process.waitFor()
-        if (version in listOf("3.10", "3.11", "3.12", "3.13", "3.14")) version else "3.10"
-    } catch (_: Exception) {
-        "3.10"
-    }
-}
-
 val customPythonPath = localProperty("python.path")?.takeIf { File(it).exists() }
 val detectedPython = customPythonPath ?: listOf(
-    "/opt/homebrew/bin/python3.10",
+    "/opt/homebrew/bin/python3.13",
     "/opt/homebrew/bin/python3",
-    "/usr/local/bin/python3.10",
+    "/usr/local/bin/python3.13",
     "/usr/local/bin/python3",
-    "/usr/bin/python3.10",
+    "/usr/bin/python3.13",
     "/usr/bin/python3"
-).firstOrNull { File(it).exists() } ?: "python3"
-
-val resolvedPythonVersion = detectPythonVersion(detectedPython)
+).firstOrNull { File(it).exists() }
 
 chaquopy {
     defaultConfig {
-        version = resolvedPythonVersion
-        buildPython(detectedPython)
+        version = "3.13"
+        if (detectedPython != null) {
+            buildPython(detectedPython)
+        }
         pip {
             install("instaloader")
             install("yt-dlp")
