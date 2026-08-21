@@ -97,22 +97,24 @@ android {
 val customPythonPath = localProperty("python.path")?.takeIf { File(it).exists() }
 val detectedPython = customPythonPath ?: listOf(
     "/opt/homebrew/bin/python3.10",
+    "/opt/homebrew/bin/python3",
     "/usr/local/bin/python3.10",
-    "/usr/bin/python3.10"
-).firstOrNull { File(it).exists() }
+    "/usr/local/bin/python3",
+    "/usr/bin/python3.10",
+    "/usr/bin/python3"
+).firstOrNull { File(it).exists() } ?: "python3"
 
 chaquopy {
     defaultConfig {
         version = "3.10"
-        if (detectedPython != null) {
-            buildPython(detectedPython)
-        }
+        buildPython(detectedPython)
         pip {
             install("instaloader")
             install("yt-dlp")
         }
     }
 }
+
 
 
 dependencies {
