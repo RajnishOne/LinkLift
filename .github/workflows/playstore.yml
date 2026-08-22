@@ -28,11 +28,6 @@ on:
         required: false
         type: string
         default: '1.0'
-      tag_name:
-        description: 'Version tag (optional, e.g. v2.7)'
-        required: false
-        type: string
-        default: ''
 
 permissions:
   contents: read
@@ -103,9 +98,7 @@ jobs:
 
           # Fallback if no changelog found
           if [ ! -f whatsnew/whatsnew-en-US ]; then
-            TAG="${{ github.event.inputs.tag_name }}"
-            [ -z "$TAG" ] && TAG="Latest release"
-            echo "Release $TAG" > whatsnew/whatsnew-en-US
+            echo "Bug fixes and performance improvements." > whatsnew/whatsnew-en-US
           fi
 
           echo "Prepared release notes:"
