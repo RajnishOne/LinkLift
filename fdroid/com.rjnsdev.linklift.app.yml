@@ -13,13 +13,6 @@ Repo: https://github.com/RajnishOne/linklift.git
 Binaries: https://github.com/RajnishOne/linklift/releases/download/v%v/app-release.apk
 
 Builds:
-  - versionName: '2.6'
-    versionCode: 16
-    commit: f6fabbb1cc26381d729f3f775ae8d6b0f89bea06
-    subdir: app
-    gradle:
-      - yes
-
   - versionName: '2.7'
     versionCode: 17
     commit: v2.7
