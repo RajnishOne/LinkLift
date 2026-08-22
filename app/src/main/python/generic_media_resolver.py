@@ -2,10 +2,25 @@ import json
 import os
 from yt_dlp import YoutubeDL
 from yt_dlp.utils import DownloadError
+import yt_dlp.version as _ytdlp_ver
 
+# yt-dlp 2026.8.17+ deprecated android_vr (all HTTPS formats 403'd).
+# From that version, the extractor's own defaults are 'visionos' + 'web'.
+# For older builds (e.g. 2025.10.14 on Mac), android_vr still works well.
+_YTDLP_VERSION = tuple(
+    int(x) for x in _ytdlp_ver.__version__.split(".")
+    if x.isdigit()
+)
+_YTDLP_ANDROID_VR_BROKEN = _YTDLP_VERSION >= (2026, 8, 17)
 
-_DEFAULT_YOUTUBE_CLIENTS_ANONYMOUS = ["android_vr", "android"]
-_DEFAULT_YOUTUBE_CLIENTS_AUTHENTICATED = ["web", "android_vr", "android"]
+if _YTDLP_ANDROID_VR_BROKEN:
+    # 2026.8.19+ defaults; visionos + web for anon, web_embedded/tv_downgraded/web for authed
+    _DEFAULT_YOUTUBE_CLIENTS_ANONYMOUS = ["visionos", "web"]
+    _DEFAULT_YOUTUBE_CLIENTS_AUTHENTICATED = ["web_embedded", "tv_downgraded", "web"]
+else:
+    # Pre-2026.8.17 — android_vr reliably returns full DASH format table
+    _DEFAULT_YOUTUBE_CLIENTS_ANONYMOUS = ["android_vr", "android"]
+    _DEFAULT_YOUTUBE_CLIENTS_AUTHENTICATED = ["web", "android_vr", "android"]
 
 _YT_DLP_BASE_OPTIONS = {
     "quiet": True,
@@ -507,11 +522,15 @@ def resolve_url(url, cookie_file_path=None):
         last_error = error
 
     if not info and "youtube" in url.lower():
-        # Fallback with web + android_vr
+        # Fallback: try the secondary client list
+        _fallback_clients = (
+            ["web", "tv_simply"] if _YTDLP_ANDROID_VR_BROKEN
+            else ["android_vr", "web"]
+        )
         fallback_options = dict(options)
         fallback_options["extractor_args"] = {
             "youtube": {
-                "player_client": ["android_vr", "web"],
+                "player_client": _fallback_clients,
             }
         }
         try:
