@@ -99,6 +99,8 @@ import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.TrackSelectionParameters
 import androidx.media3.common.Tracks
 import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.datasource.okhttp.OkHttpDataSource
+import okhttp3.OkHttpClient
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.MergingMediaSource
@@ -166,15 +168,39 @@ fun LinkLiftVideoPlayer(
 
     val exoPlayer = remember(mediaUri, audioUri, httpHeaders) {
         val builder = ExoPlayer.Builder(context)
-        val dataSourceFactory = DefaultHttpDataSource.Factory().apply {
-            val userAgent = httpHeaders.entries
-                .firstOrNull { it.key.equals("User-Agent", ignoreCase = true) }?.value
-                ?: linkLiftUserAgent
-            setUserAgent(userAgent)
-            if (httpHeaders.isNotEmpty()) {
-                setDefaultRequestProperties(httpHeaders)
+
+        val isGoogleVideo = mediaUri.contains("googlevideo.com") || (audioUri?.contains("googlevideo.com") == true)
+        val extractionUserAgent = httpHeaders.entries
+            .firstOrNull { it.key.equals("User-Agent", ignoreCase = true) }?.value
+        val effectiveUserAgent = extractionUserAgent ?: linkLiftUserAgent
+
+        val sanitizedHeaders = mutableMapOf<String, String>()
+        httpHeaders.forEach { (name, value) ->
+            if (!name.equals("Range", ignoreCase = true)) {
+                val shouldSkip = isGoogleVideo && (
+                    name.equals("User-Agent", ignoreCase = true) ||
+                    name.equals("Sec-Fetch-Mode", ignoreCase = true) ||
+                    name.equals("Sec-Fetch-User", ignoreCase = true) ||
+                    name.equals("Sec-Fetch-Site", ignoreCase = true) ||
+                    name.equals("Sec-Fetch-Dest", ignoreCase = true) ||
+                    name.equals("Accept", ignoreCase = true)
+                )
+                if (!shouldSkip) {
+                    sanitizedHeaders[name] = value
+                }
             }
-            setAllowCrossProtocolRedirects(true)
+        }
+
+        val okHttpClient = OkHttpClient.Builder()
+            .followRedirects(true)
+            .followSslRedirects(true)
+            .build()
+
+        val dataSourceFactory = OkHttpDataSource.Factory(okHttpClient).apply {
+            setUserAgent(effectiveUserAgent)
+            if (sanitizedHeaders.isNotEmpty()) {
+                setDefaultRequestProperties(sanitizedHeaders)
+            }
         }
         val mediaSourceFactory = DefaultMediaSourceFactory(dataSourceFactory)
         builder.setMediaSourceFactory(mediaSourceFactory)

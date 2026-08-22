@@ -41,7 +41,7 @@ class TestGenericMediaResolver(unittest.TestCase):
         try:
             opts_cookie = _ydl_options(cookie_file_path=f_name)
             self.assertEqual(opts_cookie["cookiefile"], f_name)
-            self.assertEqual(opts_cookie["extractor_args"]["youtube"]["player_client"], ["web", "tv_downgraded", "web_embedded", "android"])
+            self.assertEqual(opts_cookie["extractor_args"]["youtube"]["player_client"], ["android", "ios"])
         finally:
             if os.path.exists(f_name):
                 os.remove(f_name)

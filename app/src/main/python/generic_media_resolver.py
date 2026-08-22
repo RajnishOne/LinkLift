@@ -14,7 +14,7 @@ _YTDLP_VERSION = tuple(
 _YTDLP_ANDROID_VR_BROKEN = _YTDLP_VERSION >= (2026, 8, 17)
 
 _DEFAULT_YOUTUBE_CLIENTS_ANONYMOUS = ["android", "ios"]
-_DEFAULT_YOUTUBE_CLIENTS_AUTHENTICATED = ["web", "tv_downgraded", "web_embedded", "android"]
+_DEFAULT_YOUTUBE_CLIENTS_AUTHENTICATED = ["android", "ios"]
 
 _YT_DLP_BASE_OPTIONS = {
     "quiet": True,
@@ -500,8 +500,25 @@ def resolve_url(url, cookie_file_path=None):
     if not url:
         raise ValueError("Empty media URL")
 
+    is_youtube = ("youtube" in url.lower()) or ("youtu.be" in url.lower())
+
+    # For YouTube, anonymous extraction with android/ios client produces reliable
+    # unthrottled progressive formats (itag 18). Passing browser session cookies
+    # causes YouTube to disable progressive formats and demand PO tokens / SABR.
+    # Therefore, for YouTube, attempt anonymous extraction first, and only fall
+    # back to cookie-authenticated extraction if anonymous extraction fails
+    # (e.g. for members-only or age-restricted content).
+    has_valid_cookies = bool(
+        cookie_file_path
+        and isinstance(cookie_file_path, str)
+        and os.path.exists(cookie_file_path)
+        and os.path.getsize(cookie_file_path) > 0
+    )
+
+    primary_cookie_path = None if (is_youtube and has_valid_cookies) else cookie_file_path
+
     options = _ydl_options(
-        cookie_file_path=cookie_file_path,
+        cookie_file_path=primary_cookie_path,
         noplaylist=True,
         extract_flat=False,
     )
@@ -515,7 +532,20 @@ def resolve_url(url, cookie_file_path=None):
     except DownloadError as error:
         last_error = error
 
-    if not info and "youtube" in url.lower():
+    # If anonymous extraction failed on YouTube and cookies are available, try with cookies
+    if not info and is_youtube and has_valid_cookies:
+        cookie_options = _ydl_options(
+            cookie_file_path=cookie_file_path,
+            noplaylist=True,
+            extract_flat=False,
+        )
+        try:
+            with YoutubeDL(cookie_options) as ydl:
+                info = ydl.extract_info(url, download=False)
+        except DownloadError as cookie_err:
+            last_error = cookie_err
+
+    if not info and is_youtube:
         # Fallback: try the secondary client list
         _fallback_clients = (
             ["web", "tv_simply"] if _YTDLP_ANDROID_VR_BROKEN
@@ -552,6 +582,28 @@ def resolve_url(url, cookie_file_path=None):
         )
         if payload:
             items.append(payload)
+
+    if not items:
+        # If no items found and we haven't tried cookies yet on YouTube, try with cookies as a last resort
+        if is_youtube and has_valid_cookies and primary_cookie_path is None:
+            cookie_options = _ydl_options(
+                cookie_file_path=cookie_file_path,
+                noplaylist=True,
+                extract_flat=False,
+            )
+            try:
+                with YoutubeDL(cookie_options) as ydl:
+                    cookie_info = ydl.extract_info(url, download=False)
+                    for child in _entry_iter(cookie_info):
+                        payload = _entry_payload(
+                            child,
+                            fallback_title=fallback_title,
+                            fallback_description=fallback_description,
+                        )
+                        if payload:
+                            items.append(payload)
+            except Exception:
+                pass
 
     if not items:
         raise ValueError("No downloadable media URL found")
@@ -627,18 +679,41 @@ def resolve_playlist(url, cookie_file_path=None, max_items=200):
     except (TypeError, ValueError):
         max_items_int = 200
 
+    is_youtube = ("youtube" in url.lower()) or ("youtu.be" in url.lower())
+    has_valid_cookies = bool(
+        cookie_file_path
+        and isinstance(cookie_file_path, str)
+        and os.path.exists(cookie_file_path)
+        and os.path.getsize(cookie_file_path) > 0
+    )
+    primary_cookie_path = None if (is_youtube and has_valid_cookies) else cookie_file_path
+
     options = _ydl_options(
-        cookie_file_path=cookie_file_path,
+        cookie_file_path=primary_cookie_path,
         noplaylist=False,
         extract_flat="in_playlist",
         playlistend=max_items_int,
     )
 
+    info = None
     try:
         with YoutubeDL(options) as ydl:
             info = ydl.extract_info(url, download=False)
     except DownloadError as error:
-        raise ValueError(str(error))
+        if is_youtube and has_valid_cookies and primary_cookie_path is None:
+            cookie_options = _ydl_options(
+                cookie_file_path=cookie_file_path,
+                noplaylist=False,
+                extract_flat="in_playlist",
+                playlistend=max_items_int,
+            )
+            try:
+                with YoutubeDL(cookie_options) as ydl:
+                    info = ydl.extract_info(url, download=False)
+            except DownloadError as cookie_err:
+                raise ValueError(str(cookie_err))
+        else:
+            raise ValueError(str(error))
 
     raw_entries = (info or {}).get("entries") or []
     info_type = (info or {}).get("_type", "")
