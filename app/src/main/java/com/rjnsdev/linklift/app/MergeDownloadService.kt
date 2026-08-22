@@ -18,6 +18,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.os.IBinder
 import android.provider.MediaStore
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -430,15 +431,16 @@ class MergeDownloadService : Service() {
         val resumeFrom = target.takeIf { it.exists() }?.length()?.takeIf { it > 0L } ?: 0L
         val builder = Request.Builder().url(url)
         val isGoogleVideo = url.contains("googlevideo.com")
-        if (headers.none { it.key.equals("User-Agent", ignoreCase = true) } || isGoogleVideo) {
-            builder.header("User-Agent", linkLiftUserAgent)
-        }
+
+        val extractionUserAgent = headers.entries
+            .firstOrNull { it.key.equals("User-Agent", ignoreCase = true) }?.value
+        val effectiveUserAgent = extractionUserAgent ?: linkLiftUserAgent
+        builder.header("User-Agent", effectiveUserAgent)
+
         headers.forEach { (name, value) ->
             if (!name.equals("Range", ignoreCase = true)) {
                 val shouldSkip = isGoogleVideo && (
                     name.equals("User-Agent", ignoreCase = true) ||
-                    name.equals("Accept", ignoreCase = true) ||
-                    name.equals("Accept-Language", ignoreCase = true) ||
                     name.equals("Sec-Fetch-Mode", ignoreCase = true) ||
                     name.equals("Sec-Fetch-User", ignoreCase = true) ||
                     name.equals("Sec-Fetch-Site", ignoreCase = true) ||
@@ -452,14 +454,18 @@ class MergeDownloadService : Service() {
         if (resumeFrom > 0L) {
             builder.header("Range", "bytes=$resumeFrom-")
         }
+
+        Log.d("MergeDownloadService", "Starting HTTP download from: ${url.take(80)}... target: ${target.name} resumeFrom: $resumeFrom UA: $effectiveUserAgent")
         val response = okHttpClient.newCall(builder.get().build()).execute()
         response.use { resp ->
+            Log.d("MergeDownloadService", "HTTP response code: ${resp.code} for target: ${target.name} content-length: ${resp.header("Content-Length")}")
             if (resp.code == 416 && resumeFrom > 0L) {
                 onProgress(resumeFrom, resumeFrom)
                 return
             }
             if (!resp.isSuccessful) {
                 val retryable = isRetryableHttpCode(resp.code)
+                Log.e("MergeDownloadService", "Download failed: HTTP ${resp.code} for $url")
                 throw IOException(
                     "Download failed: HTTP ${resp.code}${if (retryable) " (retryable)" else ""} for $url",
                 )

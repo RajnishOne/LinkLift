@@ -654,10 +654,11 @@ class LinkLiftViewModel(application: Application) : AndroidViewModel(application
             audioSize = audioFormat?.fileSizeBytes ?: (if (format.isAudioOnly) (format.fileSizeBytes ?: 0L) else 0L),
         )
 
+        val actionLabel = if (format.requiresMerge) "Merging" else "Downloading"
         _uiState.update {
             it.copy(
                 currentScreen = AppScreen.Downloads,
-                message = "Merging ${format.label} • saving to ${defaultDownloadLocation()}",
+                message = "$actionLabel ${format.label} • saving to ${defaultDownloadLocation()}",
             )
         }
     }
@@ -1117,6 +1118,10 @@ class LinkLiftViewModel(application: Application) : AndroidViewModel(application
 
             val headers = formats.getOrNull(index)?.httpHeaders.orEmpty()
             val isGoogleVideo = item.resolvedUrl.contains("googlevideo.com")
+            val extractionUserAgent = headers.entries
+                .firstOrNull { it.key.equals("User-Agent", ignoreCase = true) }?.value
+            val effectiveUserAgent = extractionUserAgent ?: linkLiftUserAgent
+
             if (headers.isNotEmpty()) {
                 headers.forEach { (name, value) ->
                     val shouldSkip = isGoogleVideo && (
@@ -1132,11 +1137,9 @@ class LinkLiftViewModel(application: Application) : AndroidViewModel(application
                         runCatching { request.addRequestHeader(name, value) }
                     }
                 }
-                if (isGoogleVideo) {
-                    runCatching { request.addRequestHeader("User-Agent", linkLiftUserAgent) }
-                }
-            } else if (!headers.containsKey("User-Agent")) {
-                request.addRequestHeader("User-Agent", linkLiftUserAgent)
+                runCatching { request.addRequestHeader("User-Agent", effectiveUserAgent) }
+            } else {
+                runCatching { request.addRequestHeader("User-Agent", effectiveUserAgent) }
             }
 
             val downloadId = manager.enqueue(request)

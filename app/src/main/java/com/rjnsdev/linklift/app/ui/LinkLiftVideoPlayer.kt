@@ -105,6 +105,7 @@ import androidx.media3.exoplayer.source.MergingMediaSource
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.PlayerView
+import com.rjnsdev.linklift.app.linkLiftUserAgent
 import com.rjnsdev.linklift.app.ui.theme.LinkLiftAccent
 import com.rjnsdev.linklift.app.ui.theme.LinkLiftAccentBright
 import com.rjnsdev.linklift.app.ui.theme.LinkLiftCard
@@ -166,6 +167,10 @@ fun LinkLiftVideoPlayer(
     val exoPlayer = remember(mediaUri, audioUri, httpHeaders) {
         val builder = ExoPlayer.Builder(context)
         val dataSourceFactory = DefaultHttpDataSource.Factory().apply {
+            val userAgent = httpHeaders.entries
+                .firstOrNull { it.key.equals("User-Agent", ignoreCase = true) }?.value
+                ?: linkLiftUserAgent
+            setUserAgent(userAgent)
             if (httpHeaders.isNotEmpty()) {
                 setDefaultRequestProperties(httpHeaders)
             }
@@ -194,9 +199,17 @@ fun LinkLiftVideoPlayer(
         player
     }
 
-    // Attach player listener for track changes
+    // Attach player listener for track changes and error logging
     DisposableEffect(exoPlayer) {
         val listener = object : Player.Listener {
+            override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                android.util.Log.e("LinkLiftVideoPlayer", "ExoPlayer error [${error.errorCodeName} / ${error.errorCode}]: ${error.message}", error)
+            }
+
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                android.util.Log.d("LinkLiftVideoPlayer", "ExoPlayer playbackState: $playbackState duration: ${exoPlayer.duration}ms")
+            }
+
             override fun onTracksChanged(tracks: Tracks) {
                 val subs = mutableListOf<SubtitleTrackOption>()
                 val audios = mutableListOf<AudioTrackOption>()

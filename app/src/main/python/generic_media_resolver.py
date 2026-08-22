@@ -13,14 +13,8 @@ _YTDLP_VERSION = tuple(
 )
 _YTDLP_ANDROID_VR_BROKEN = _YTDLP_VERSION >= (2026, 8, 17)
 
-if _YTDLP_ANDROID_VR_BROKEN:
-    # 2026.8.19+ defaults; visionos + web for anon, web_embedded/tv_downgraded/web for authed
-    _DEFAULT_YOUTUBE_CLIENTS_ANONYMOUS = ["visionos", "web"]
-    _DEFAULT_YOUTUBE_CLIENTS_AUTHENTICATED = ["web_embedded", "tv_downgraded", "web"]
-else:
-    # Pre-2026.8.17 — android_vr reliably returns full DASH format table
-    _DEFAULT_YOUTUBE_CLIENTS_ANONYMOUS = ["android_vr", "android"]
-    _DEFAULT_YOUTUBE_CLIENTS_AUTHENTICATED = ["web", "android_vr", "android"]
+_DEFAULT_YOUTUBE_CLIENTS_ANONYMOUS = ["android", "ios"]
+_DEFAULT_YOUTUBE_CLIENTS_AUTHENTICATED = ["web", "tv_downgraded", "web_embedded", "android"]
 
 _YT_DLP_BASE_OPTIONS = {
     "quiet": True,

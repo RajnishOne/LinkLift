@@ -161,8 +161,10 @@ internal fun shouldRefreshUrlBeforeDownload(url: String): Boolean {
 
 internal fun shouldDownloadWithMergeService(format: MediaFormat, sourceUrl: String): Boolean {
     if (format.requiresMerge) return true
+    if (isYouTubeUrl(sourceUrl) || format.mediaUrl.contains("googlevideo.com")) return true
     val host = getUriHost(sourceUrl).lowercase(Locale.ROOT)
-    return host.contains("tiktok.com") || host == "vt.tiktok.com" ||
+    return host.contains("youtube.com") || host == "youtu.be" || host.contains("youtu.be") ||
+           host.contains("tiktok.com") || host == "vt.tiktok.com" ||
            host.contains("facebook.com") || host == "fb.watch" ||
            host.contains("xhamster.com") || host.contains("xhamster2.com") ||
            host.contains("pornhub.com")

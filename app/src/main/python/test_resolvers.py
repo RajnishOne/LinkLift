@@ -30,15 +30,9 @@ class DummyObject:
 class TestGenericMediaResolver(unittest.TestCase):
 
     def test_ydl_options_with_and_without_cookies(self):
-        import generic_media_resolver as gmr
         opts_plain = _ydl_options()
         self.assertNotIn("cookiefile", opts_plain)
-        # Clients are version-aware: android_vr (pre-2026.8.17) or visionos (2026.8.17+)
-        anon_clients = opts_plain["extractor_args"]["youtube"]["player_client"]
-        if gmr._YTDLP_ANDROID_VR_BROKEN:
-            self.assertIn("visionos", anon_clients)
-        else:
-            self.assertIn("android_vr", anon_clients)
+        self.assertEqual(opts_plain["extractor_args"]["youtube"]["player_client"], ["android", "ios"])
 
         with tempfile.NamedTemporaryFile("w", delete=False) as f:
             f.write("# Netscape HTTP Cookie File\n")
@@ -47,11 +41,7 @@ class TestGenericMediaResolver(unittest.TestCase):
         try:
             opts_cookie = _ydl_options(cookie_file_path=f_name)
             self.assertEqual(opts_cookie["cookiefile"], f_name)
-            authed_clients = opts_cookie["extractor_args"]["youtube"]["player_client"]
-            if gmr._YTDLP_ANDROID_VR_BROKEN:
-                self.assertIn("web_embedded", authed_clients)
-            else:
-                self.assertIn("web", authed_clients)
+            self.assertEqual(opts_cookie["extractor_args"]["youtube"]["player_client"], ["web", "tv_downgraded", "web_embedded", "android"])
         finally:
             if os.path.exists(f_name):
                 os.remove(f_name)
