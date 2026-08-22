@@ -466,9 +466,13 @@ class MergeDownloadService : Service() {
             if (!resp.isSuccessful) {
                 val retryable = isRetryableHttpCode(resp.code)
                 Log.e("MergeDownloadService", "Download failed: HTTP ${resp.code} for $url")
-                throw IOException(
-                    "Download failed: HTTP ${resp.code}${if (retryable) " (retryable)" else ""} for $url",
-                )
+                val isYt = isYouTubeUrl(url) || url.contains("googlevideo.com")
+                val detail = if (resp.code == 403 && isYt) {
+                    "HTTP 403 (YouTube authentication required)"
+                } else {
+                    "HTTP ${resp.code}${if (retryable) " (retryable)" else ""}"
+                }
+                throw IOException("Download failed: $detail for $url")
             }
             val body = resp.body ?: throw IOException("Empty response body for $url")
             val append = resp.code == 206

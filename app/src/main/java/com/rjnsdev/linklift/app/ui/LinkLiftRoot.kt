@@ -5,28 +5,37 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalContext
-import com.rjnsdev.linklift.app.ui.YouTubeAuthActivity
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Login
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -37,11 +46,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.rjnsdev.linklift.app.ui.YouTubeAuthActivity
+import com.rjnsdev.linklift.app.ui.theme.LinkLiftAccent
 import com.rjnsdev.linklift.app.ui.theme.LinkLiftAccentBright
 import com.rjnsdev.linklift.app.ui.theme.LinkLiftCard
+import com.rjnsdev.linklift.app.ui.theme.LinkLiftTextMuted
+import com.rjnsdev.linklift.app.ui.theme.LinkLiftTextSecondary
 import com.rjnsdev.linklift.app.ui.theme.LinkLiftTheme
 
 @Composable
@@ -197,6 +212,9 @@ internal fun LinkLiftRoot(
                             onRemoveTracked = viewModel::removeTrackedDownloads,
                             onRegenerateTracked = viewModel::regenerateTrackedDownload,
                             onCancelDownload = viewModel::cancelDownload,
+                            onPromptYouTubeAuth = {
+                                viewModel.promptYouTubeAuth("A YouTube download was blocked. Sign in or import cookies to download this video.")
+                            },
                         )
                         AppScreen.Settings -> SettingsScreen(
                             preferences = uiState.settings,
@@ -221,6 +239,21 @@ internal fun LinkLiftRoot(
                         )
                     }
                 }
+            }
+
+            if (uiState.showYouTubeAuthPrompt) {
+                YouTubeAuthPromptDialog(
+                    reason = uiState.youTubeAuthPromptReason,
+                    onSignIn = {
+                        viewModel.dismissYouTubeAuthPrompt()
+                        youTubeAuthLauncher.launch(YouTubeAuthActivity.createIntent(context))
+                    },
+                    onOpenSettings = {
+                        viewModel.dismissYouTubeAuthPrompt()
+                        viewModel.openScreen(AppScreen.Settings)
+                    },
+                    onDismiss = viewModel::dismissYouTubeAuthPrompt,
+                )
             }
         }
     }
@@ -301,5 +334,86 @@ private fun LinkLiftTopBar(
             navigationIconContentColor = Color.White,
             actionIconContentColor = LinkLiftAccentBright,
         ),
+    )
+}
+
+@Composable
+private fun YouTubeAuthPromptDialog(
+    reason: String?,
+    onSignIn: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Surface(
+                shape = CircleShape,
+                color = LinkLiftAccent.copy(alpha = 0.18f),
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Lock,
+                    contentDescription = null,
+                    tint = LinkLiftAccentBright,
+                    modifier = Modifier
+                        .padding(12.dp)
+                        .size(28.dp),
+                )
+            }
+        },
+        title = {
+            Text(
+                text = "YouTube Authentication",
+                style = MaterialTheme.typography.titleLarge,
+                color = Color.White,
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = reason ?: "YouTube blocked extraction or download due to bot verification, age restriction, or missing cookies.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = LinkLiftTextSecondary,
+                )
+                Text(
+                    text = "Authenticate via the in-app browser or import session cookies to unlock clean downloads.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = LinkLiftTextMuted,
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onSignIn,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = LinkLiftAccent,
+                    contentColor = Color.White,
+                ),
+                shape = RoundedCornerShape(12.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Login,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(18.dp)
+                        .padding(end = 4.dp),
+                )
+                Text("Sign In")
+            }
+        },
+        dismissButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel", color = LinkLiftTextMuted)
+                }
+                OutlinedButton(
+                    onClick = onOpenSettings,
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, LinkLiftAccent.copy(alpha = 0.5f)),
+                ) {
+                    Text("Open Settings", color = LinkLiftAccentBright)
+                }
+            }
+        },
     )
 }

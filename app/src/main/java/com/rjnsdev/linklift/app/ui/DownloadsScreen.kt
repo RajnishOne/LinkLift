@@ -1,6 +1,7 @@
 package com.rjnsdev.linklift.app
 
 import android.net.Uri
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -27,6 +28,7 @@ import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.PlayCircleOutline
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Checkbox
@@ -76,6 +78,7 @@ internal fun DownloadsScreen(
     onRemoveTracked: (Set<Long>) -> Unit,
     onRegenerateTracked: (String?) -> Unit,
     onCancelDownload: (Long) -> Unit,
+    onPromptYouTubeAuth: () -> Unit = {},
 ) {
     val context = LocalContext.current
     var query by rememberSaveable { mutableStateOf("") }
@@ -216,6 +219,7 @@ internal fun DownloadsScreen(
                         }
                     },
                     onCancel = { onCancelDownload(item.id) },
+                    onPromptYouTubeAuth = onPromptYouTubeAuth,
                     selectionMode = selectionMode,
                     selected = item.id in selectedIds,
                     onSelectionChanged = { checked ->
@@ -236,6 +240,7 @@ private fun DownloadDetailCard(
     download: DownloadEntry,
     onOpen: (DownloadEntry) -> Unit,
     onCancel: () -> Unit,
+    onPromptYouTubeAuth: () -> Unit = {},
     selectionMode: Boolean = false,
     selected: Boolean = false,
     onSelectionChanged: (Boolean) -> Unit = {},
@@ -274,6 +279,41 @@ private fun DownloadDetailCard(
                     isActive = isActive,
                     onCancel = onCancel,
                 )
+            }
+
+            if (download.state == DownloadState.Failed) {
+                val isYouTubeOrAuth = download.sourceUrl?.let { isYouTubeUrl(it) } == true ||
+                    download.description.contains("YouTube", ignoreCase = true) ||
+                    download.description.contains("403") ||
+                    download.description.contains("auth", ignoreCase = true)
+                if (isYouTubeOrAuth) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onPromptYouTubeAuth() },
+                        shape = RoundedCornerShape(12.dp),
+                        color = LinkLiftAccent.copy(alpha = 0.15f),
+                        border = BorderStroke(1.dp, LinkLiftAccent.copy(alpha = 0.5f)),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Lock,
+                                contentDescription = null,
+                                tint = LinkLiftAccentBright,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Text(
+                                text = "YouTube Auth Required • Tap to Sign In",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = LinkLiftAccentBright,
+                            )
+                        }
+                    }
+                }
             }
         }
     }

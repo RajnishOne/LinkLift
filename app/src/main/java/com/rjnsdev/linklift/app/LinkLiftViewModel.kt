@@ -112,13 +112,24 @@ class LinkLiftViewModel(application: Application) : AndroidViewModel(application
             MergeJobStore.jobs
                 .distinctUntilChanged { old, new -> mergeJobsUiFingerprint(old) == mergeJobsUiFingerprint(new) }
                 .collect { jobs ->
+                    val hasFailed403 = jobs.values.any { job ->
+                        job.state == MergeJobState.Failed && (job.errorMessage?.contains("403") == true || job.errorMessage?.contains("YouTube", ignoreCase = true) == true)
+                    }
+                    val hasCookies = CookieHelper.hasValidCookies(appContext)
                     _uiState.update { current ->
                         val merged = mergeDownloadsList(
                             base = current.downloads.filter { it.id >= 0 },
                             mergeJobs = jobs.values.toList(),
                             previous = current.downloads,
                         )
-                        if (merged == current.downloads) current else current.copy(downloads = merged)
+                        val shouldPrompt = hasFailed403 && !hasCookies && !current.showYouTubeAuthPrompt
+                        val next = if (merged == current.downloads) current else current.copy(downloads = merged)
+                        if (shouldPrompt) {
+                            next.copy(
+                                showYouTubeAuthPrompt = true,
+                                youTubeAuthPromptReason = "A YouTube download was blocked by stream protection (HTTP 403). Sign in or import cookies to download this video.",
+                            )
+                        } else next
                     }
                 }
         }
@@ -385,11 +396,20 @@ class LinkLiftViewModel(application: Application) : AndroidViewModel(application
                 // The UI state is reset by cancelAnalysis(); just bail.
                 throw cancellation
             } catch (error: Throwable) {
+                val isYt = isYouTubeUrl(rawUrl)
+                val hasCookies = CookieHelper.hasValidCookies(appContext)
+                val errMsg = error.message.orEmpty()
+                val needsYouTubeAuth = isYt && (!hasCookies || errMsg.contains("bot", ignoreCase = true) || errMsg.contains("Sign in", ignoreCase = true) || errMsg.contains("403") || errMsg.contains("cookies", ignoreCase = true))
+
                 _uiState.update {
                     it.copy(
                         currentScreen = AppScreen.Home,
                         analysisLatencyMs = null,
                         message = error.message ?: "Unable to read that playlist.",
+                        showYouTubeAuthPrompt = needsYouTubeAuth,
+                        youTubeAuthPromptReason = if (needsYouTubeAuth) {
+                            "YouTube playlist extraction was blocked by bot protection. Sign in with YouTube or import cookies to proceed."
+                        } else null,
                     )
                 }
             }
@@ -473,12 +493,21 @@ class LinkLiftViewModel(application: Application) : AndroidViewModel(application
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (error: Throwable) {
+                val isYt = isYouTubeUrl(rawUrl)
+                val hasCookies = CookieHelper.hasValidCookies(appContext)
+                val errMsg = error.message.orEmpty()
+                val needsYouTubeAuth = isYt && (!hasCookies || errMsg.contains("bot", ignoreCase = true) || errMsg.contains("Sign in", ignoreCase = true) || errMsg.contains("403") || errMsg.contains("cookies", ignoreCase = true) || errMsg.contains("reloaded", ignoreCase = true))
+
                 _uiState.update {
                     it.copy(
                         currentScreen = AppScreen.Home,
                         preview = null,
                         analysisLatencyMs = null,
                         message = error.message ?: "Unable to analyze that link.",
+                        showYouTubeAuthPrompt = needsYouTubeAuth,
+                        youTubeAuthPromptReason = if (needsYouTubeAuth) {
+                            "YouTube requires authentication or session cookies to analyze and download this video without bot blocks."
+                        } else null,
                     )
                 }
             }
@@ -2789,6 +2818,24 @@ class LinkLiftViewModel(application: Application) : AndroidViewModel(application
         refreshCookieStatus()
         _uiState.update {
             it.copy(message = "YouTube cookies cleared.")
+        }
+    }
+
+    fun promptYouTubeAuth(reason: String? = null) {
+        _uiState.update {
+            it.copy(
+                showYouTubeAuthPrompt = true,
+                youTubeAuthPromptReason = reason ?: "YouTube authentication is required to access or download this stream.",
+            )
+        }
+    }
+
+    fun dismissYouTubeAuthPrompt() {
+        _uiState.update {
+            it.copy(
+                showYouTubeAuthPrompt = false,
+                youTubeAuthPromptReason = null,
+            )
         }
     }
 
