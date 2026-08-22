@@ -14,8 +14,8 @@
   <a href="https://developer.android.com/jetpack/compose"><img src="https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?style=flat&logo=jetpackcompose&logoColor=white" alt="Compose"></a>
   <a href="https://chaquo.com/chaquopy/"><img src="https://img.shields.io/badge/Python-3.13%20(Chaquopy)-3776AB?style=flat&logo=python&logoColor=white" alt="Python 3.13"></a>
   <a href="https://github.com/yt-dlp/yt-dlp"><img src="https://img.shields.io/badge/Powered%20by-yt--dlp%20%26%20Instaloader-FF0000?style=flat" alt="yt-dlp"></a>
-  <a href="https://github.com/RajnishOne/LinkLift/releases"><img src="https://img.shields.io/badge/F--Droid%20%26%20FOSS-Ready-009688?style=flat&logo=f-droid&logoColor=white" alt="F-Droid Ready"></a>
-  <a href="https://github.com/RajnishOne/LinkLift/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat" alt="PRs Welcome"></a>
+  <a href="https://github.com/RajnishOne/linklift/releases"><img src="https://img.shields.io/badge/F--Droid%20%26%20FOSS-Ready-009688?style=flat&logo=f-droid&logoColor=white" alt="F-Droid Ready"></a>
+  <a href="https://github.com/RajnishOne/linklift/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat" alt="PRs Welcome"></a>
 </p>
 
 ---
@@ -94,7 +94,7 @@ LinkLift
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/RajnishOne/LinkLift.git
+git clone https://github.com/RajnishOne/linklift.git
 cd LinkLift
 ```
 
