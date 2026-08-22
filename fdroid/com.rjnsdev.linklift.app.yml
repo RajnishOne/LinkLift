@@ -10,6 +10,7 @@ AutoName: LinkLift
 
 RepoType: git
 Repo: https://github.com/RajnishOne/linklift.git
+Binaries: https://github.com/RajnishOne/linklift/releases/download/v%v/app-release.apk
 
 Builds:
   - versionName: '2.6'
@@ -25,6 +26,8 @@ Builds:
     subdir: app
     gradle:
       - yes
+
+AllowedAPKSigningKeys: 647060481d45eebe02328a07c42c786faff4735cb6aaa6dd5ca18808bc25119e
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
