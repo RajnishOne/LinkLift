@@ -11,6 +11,7 @@ _YT_DLP_BASE_OPTIONS = {
     "quiet": True,
     "no_warnings": True,
     "skip_download": True,
+    "format": "all",
     "proxy": "",
     "extractor_args": {
         "youtube": {
