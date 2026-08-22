@@ -181,6 +181,5 @@ jobs:
           releaseFiles: app/build/outputs/bundle/release/app-release.aab
           track: ${{ github.event.inputs.play_track || 'internal' }}
           status: ${{ github.event.inputs.play_status || 'completed' }}
-          userFraction: '1.0'
           whatsNewDirectory: whatsnew
           mappingFile: app/build/outputs/mapping/release/mapping.txt

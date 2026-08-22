@@ -23,11 +23,6 @@ on:
           - 'inProgress'
           - 'halted'
         default: 'completed'
-      user_fraction:
-        description: 'User fraction for inProgress status (e.g. 0.1 for 10%, 1.0 for 100%)'
-        required: false
-        type: string
-        default: '1.0'
 
 permissions:
   contents: read
@@ -112,6 +107,5 @@ jobs:
           releaseFiles: app/build/outputs/bundle/release/app-release.aab
           track: ${{ github.event.inputs.track }}
           status: ${{ github.event.inputs.status }}
-          userFraction: ${{ github.event.inputs.user_fraction || '1.0' }}
           whatsNewDirectory: whatsnew
           mappingFile: app/build/outputs/mapping/release/mapping.txt
