@@ -138,8 +138,8 @@ _WEBM_FAMILY_EXTS = {"webm", "mkv"}
 _MP4_AUDIO_EXTS = {"m4a", "mp4", "aac"}
 _WEBM_AUDIO_EXTS = {"webm", "opus", "ogg"}
 # MediaMuxer supports these video codecs into MP4/WebM containers.
-_MUXER_VIDEO_CODECS = {"avc", "h264", "hev", "h265", "hvc", "vp8", "vp9", "av01", "av1"}
-_MUXER_AUDIO_CODECS = {"aac", "mp4a", "opus", "vorbis"}
+_MUXER_VIDEO_CODECS = {"avc", "h264", "hev", "h265", "hvc", "vp8", "vp08", "vp9", "vp09", "av01", "av1", "mp4v"}
+_MUXER_AUDIO_CODECS = {"aac", "mp4a", "opus", "vorbis", "mp3", "ogg", "flac", "wav"}
 
 
 def _format_label(fmt, kind, ext, height, fps, abr):
@@ -191,6 +191,11 @@ def _format_payload(fmt):
         # Skip segmented (DASH / HLS) and RTMP — we can't fetch those with a single GET.
         return None
 
+    ext = (fmt.get("ext") or "").lower()
+    fid = str(fmt.get("format_id") or "")
+    if ext in {"mhtml", "none"} or fid.startswith("sb"):
+        return None
+
     vcodec = (fmt.get("vcodec") or "none").lower()
     acodec = (fmt.get("acodec") or "none").lower()
     has_video = vcodec != "none"
@@ -204,14 +209,9 @@ def _format_payload(fmt):
     kind = "audio" if is_audio_only else "video"
 
     # Drop streams in codecs Android's MediaMuxer can't passthrough — we'd be
-    # downloading something we can't combine or play.
+    # downloading something we can't combine. Progressive and pure audio are kept.
     if is_video_only and not _is_muxer_compatible_video(vcodec):
         return None
-    if (is_audio_only or is_progressive) and has_audio and not _is_muxer_compatible_audio(acodec):
-        # Allow non-muxer audio for progressive (we won't try to mux it),
-        # but skip pure audio-only streams that can't be paired later either.
-        if is_audio_only:
-            return None
 
     ext = (fmt.get("ext") or ("m4a" if is_audio_only else "mp4")).lower()
     height = fmt.get("height")
@@ -374,6 +374,9 @@ def _entry_formats(entry):
             seen_heights.add(key)
 
     combined_videos = progressive_sorted + extra_merge
+    if not combined_videos and video_only_sorted:
+        combined_videos = video_only_sorted
+
     combined_videos.sort(key=lambda f: (-(f.get("height") or 0), 0 if f.get("is_progressive") else 1))
 
     return combined_videos + audio_formats
@@ -438,6 +441,17 @@ def _fallback_format_from_entry(entry):
 
 def _entry_payload(entry, fallback_title=None, fallback_description=None):
     formats = _entry_formats(entry)
+    if not formats:
+        # Check raw formats directly before falling back
+        for fmt in entry.get("formats") or []:
+            url = fmt.get("url")
+            ext = (fmt.get("ext") or "").lower()
+            fid = str(fmt.get("format_id") or "")
+            if url and ext not in {"mhtml", "none"} and not fid.startswith("sb"):
+                payload = _format_payload(fmt)
+                if payload:
+                    formats.append(payload)
+
     if not formats:
         fallback = _fallback_format_from_entry(entry)
         if fallback:

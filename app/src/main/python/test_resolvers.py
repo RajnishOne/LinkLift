@@ -89,12 +89,12 @@ class TestGenericMediaResolver(unittest.TestCase):
         # Incompatible video codec
         self.assertFalse(_is_muxer_compatible_video("unknown_codec_xyz"))
 
-        # Compatible audio codecs for MediaMuxer
+        # Compatible audio codecs for MediaMuxer and audio downloads
         self.assertTrue(_is_muxer_compatible_audio("mp4a.40.2"))
         self.assertTrue(_is_muxer_compatible_audio("aac"))
         self.assertTrue(_is_muxer_compatible_audio("opus"))
-
-        self.assertFalse(_is_muxer_compatible_audio("flac"))
+        self.assertTrue(_is_muxer_compatible_audio("flac"))
+        self.assertFalse(_is_muxer_compatible_audio("unknown_audio_codec"))
 
     def test_pick_audio_pair(self):
         video_mp4 = {"ext": "mp4"}
