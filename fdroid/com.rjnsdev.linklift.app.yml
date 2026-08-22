@@ -21,7 +21,7 @@ Builds:
 
   - versionName: '2.7'
     versionCode: 17
-    commit: 'v2.7'
+    commit: v2.7
     subdir: app
     gradle:
       - yes
