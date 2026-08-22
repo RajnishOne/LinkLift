@@ -1,4 +1,4 @@
-# LinkLift — Android YouTube, Instagram & Media Downloader
+# LinkLift - Android YouTube, Instagram & Media Downloader
 
 <p align="center">
   <img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" width="96" height="96" alt="LinkLift Logo" />
