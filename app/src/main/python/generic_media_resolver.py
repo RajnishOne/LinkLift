@@ -4,7 +4,7 @@ from yt_dlp import YoutubeDL
 from yt_dlp.utils import DownloadError
 
 
-_DEFAULT_YOUTUBE_CLIENTS_ANONYMOUS = ["android_vr", "android", "web"]
+_DEFAULT_YOUTUBE_CLIENTS_ANONYMOUS = ["android_vr", "android"]
 _DEFAULT_YOUTUBE_CLIENTS_AUTHENTICATED = ["web", "android_vr", "android"]
 
 _YT_DLP_BASE_OPTIONS = {
@@ -90,7 +90,9 @@ def _best_requested_download(entry):
     downloads = entry.get("requested_downloads") or []
     for item in downloads:
         url = item.get("url")
-        if url:
+        ext = (item.get("ext") or "").lower()
+        fid = str(item.get("format_id") or "")
+        if url and ext not in {"mhtml", "none"} and not fid.startswith("sb"):
             return item
     return None
 
@@ -385,6 +387,9 @@ def _fallback_format_from_entry(entry):
         return None
 
     ext = (requested.get("ext") or entry.get("ext") or "mp4").lower()
+    if ext in {"mhtml", "none", "sb3", "sb2", "sb1", "sb0"}:
+        return None
+
     vcodec = (entry.get("vcodec") or "").lower()
     acodec = (entry.get("acodec") or "").lower()
     has_video = bool(vcodec) and vcodec != "none"
@@ -395,9 +400,15 @@ def _fallback_format_from_entry(entry):
         has_video = kind_str == "video"
         has_audio = kind_str in {"video", "audio"}
 
+    if not has_video and not has_audio:
+        return None
+
+    height = entry.get("height")
+    if isinstance(height, (int, float)) and height < 120:
+        return None
+
     is_audio_only = has_audio and not has_video
     kind = "audio" if is_audio_only else "video"
-    height = entry.get("height")
     fps = entry.get("fps")
     abr = entry.get("abr") or entry.get("asr")
     label = _format_label({}, kind, ext, height, fps, abr) or "Original"
