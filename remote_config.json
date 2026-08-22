@@ -1,5 +1,5 @@
 {
-  "is_youtube_available": true,
+  "is_youtube_available": false,
   "is_soundcloud_available": true,
   "is_imgur_available": true
 }
