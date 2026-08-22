@@ -10,6 +10,31 @@ on:
         description: 'Tag name (e.g. v2.7)'
         required: true
         default: 'v2.7'
+      publish_to_playstore:
+        description: 'Also publish AAB to Google Play Store'
+        required: false
+        type: boolean
+        default: false
+      play_track:
+        description: 'Google Play Release Track'
+        required: false
+        type: choice
+        options:
+          - 'internal'
+          - 'alpha'
+          - 'beta'
+          - 'production'
+        default: 'internal'
+      play_status:
+        description: 'Google Play Release Status'
+        required: false
+        type: choice
+        options:
+          - 'completed'
+          - 'draft'
+          - 'inProgress'
+          - 'halted'
+        default: 'completed'
 
 permissions:
   contents: write
@@ -60,8 +85,8 @@ jobs:
       - name: Run Unit Tests
         run: ./gradlew testDebugUnitTest --no-daemon
 
-      - name: Build Release APK
-        run: ./gradlew assembleRelease --no-daemon
+      - name: Build Release APK & Bundle (AAB)
+        run: ./gradlew assembleRelease bundleRelease --no-daemon
 
       - name: Extract Release Notes from Fastlane Changelog
         id: changelog
@@ -100,7 +125,7 @@ jobs:
             echo "EOF" >> $GITHUB_OUTPUT
           fi
 
-      - name: Create GitHub Release and Upload APK
+      - name: Create GitHub Release and Upload APK & AAB
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.changelog.outputs.tag_name }}
@@ -115,7 +140,47 @@ jobs:
             *Built and signed automatically by GitHub Actions.*
           files: |
             app/build/outputs/apk/release/app-release.apk
+            app/build/outputs/bundle/release/app-release.aab
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prepare Release Notes for Google Play
+        if: (github.event_name == 'workflow_dispatch' && github.event.inputs.publish_to_playstore == 'true') || (github.event_name == 'push' && env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != '')
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          mkdir -p whatsnew
+          for locale_dir in fastlane/metadata/android/*; do
+            if [ -d "$locale_dir/changelogs" ]; then
+              LOCALE=$(basename "$locale_dir")
+              LATEST=$(ls -v "$locale_dir"/changelogs/*.txt 2>/dev/null | tail -n 1)
+              if [ -f "$LATEST" ]; then
+                echo "Copying $LATEST to whatsnew/whatsnew-$LOCALE"
+                cp "$LATEST" "whatsnew/whatsnew-$LOCALE"
+              fi
+            fi
+          done
+
+          if [ ! -f whatsnew/whatsnew-en-US ]; then
+            echo "${{ steps.changelog.outputs.CHANGELOG }}" > whatsnew/whatsnew-en-US
+          fi
+
+          echo "Prepared release notes:"
+          ls -la whatsnew
+
+      - name: Publish AAB to Google Play Store
+        if: (github.event_name == 'workflow_dispatch' && github.event.inputs.publish_to_playstore == 'true') || (github.event_name == 'push' && env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != '')
+        uses: r0adkll/upload-google-play@v1
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.rjnsdev.linklift.app
+          releaseFiles: app/build/outputs/bundle/release/app-release.aab
+          track: ${{ github.event.inputs.play_track || 'internal' }}
+          status: ${{ github.event.inputs.play_status || 'completed' }}
+          userFraction: '1.0'
+          whatsNewDirectory: whatsnew
+          mappingFile: app/build/outputs/mapping/release/mapping.txt
