@@ -1,19 +1,20 @@
-# LinkLift
+# LinkLift — Android YouTube, Instagram & Media Downloader
 
 <p align="center">
   <img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" width="96" height="96" alt="LinkLift Logo" />
 </p>
 
 <p align="center">
-  <strong>A modern, powerful, and privacy-focused Android media downloader and extractor.</strong>
+  <strong>Fast, private, all-in-one YouTube downloader, Instagram Reels downloader & media extractor for Android.</strong>
 </p>
 
 <p align="center">
   <a href="https://developer.android.com/about/versions/nougat"><img src="https://img.shields.io/badge/Android-7.0%2B%20(API%2024%2B)-3DDC84?style=flat&logo=android&logoColor=white" alt="Android API 24+"></a>
   <a href="https://kotlinlang.org/"><img src="https://img.shields.io/badge/Kotlin-2.2.10-7F52FF?style=flat&logo=kotlin&logoColor=white" alt="Kotlin"></a>
   <a href="https://developer.android.com/jetpack/compose"><img src="https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?style=flat&logo=jetpackcompose&logoColor=white" alt="Compose"></a>
-  <a href="https://chaquo.com/chaquopy/"><img src="https://img.shields.io/badge/Python-3.10%20(Chaquopy)-3776AB?style=flat&logo=python&logoColor=white" alt="Python 3.10"></a>
+  <a href="https://chaquo.com/chaquopy/"><img src="https://img.shields.io/badge/Python-3.13%20(Chaquopy)-3776AB?style=flat&logo=python&logoColor=white" alt="Python 3.13"></a>
   <a href="https://github.com/yt-dlp/yt-dlp"><img src="https://img.shields.io/badge/Powered%20by-yt--dlp%20%26%20Instaloader-FF0000?style=flat" alt="yt-dlp"></a>
+  <a href="https://github.com/RajnishOne/LinkLift/releases"><img src="https://img.shields.io/badge/F--Droid%20%26%20FOSS-Ready-009688?style=flat&logo=f-droid&logoColor=white" alt="F-Droid Ready"></a>
   <a href="https://github.com/RajnishOne/LinkLift/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat" alt="PRs Welcome"></a>
 </p>
 
@@ -21,23 +22,35 @@
 
 ## 🌟 Overview
 
-**LinkLift** is a native Android application built with **Jetpack Compose** and **Material 3** that lets you analyze, preview, and download high-resolution videos, audio tracks, and images from popular platforms and direct web links.
+**LinkLift** is a native, modern Android video and audio downloader built with **Jetpack Compose** and **Material 3**. It functions as an all-in-one **YouTube downloader**, **Instagram downloader**, and multi-platform media extractor, letting you analyze, stream-preview, and download high-resolution videos, audio tracks, and images directly to your device.
 
-Powered by an embedded **Python 3.10** runtime via Chaquopy, LinkLift leverages the latest `yt-dlp` and `instaloader` extraction engines combined with an on-device native `MediaMuxer` pipeline for combining separate high-definition video and audio streams seamlessly.
+Powered by an embedded **Python 3.13** runtime via Chaquopy, LinkLift leverages the latest `yt-dlp` and `instaloader` extraction engines combined with an on-device native `MediaMuxer` pipeline for combining separate 1080p/4K video and high-bitrate audio streams into standard MP4/WebM files with zero quality loss.
 
 ---
 
-## ✨ Features
+## 🎯 Supported Platforms & Features
 
-- **Multi-Platform Support**: Extract media from YouTube, Instagram (Reels, Posts, Carousels), TikTok, Twitter/X, Reddit, Pinterest, SoundCloud, Vimeo, and 1,000+ websites.
-- **High-Definition Downloads**:
-  - Direct single-stream video & audio downloads via Android `DownloadManager`.
-  - On-device **Video + Audio Merging**: Pairs 1080p/4K video-only streams with high-bitrate audio (AAC/M4A/Opus) and multiplexes them locally into standard MP4/WebM containers using `MediaMuxer` and a dedicated foreground service.
-- **Embedded Fullscreen Media Player**: Custom video and audio player built with **AndroidX Media3 (ExoPlayer)** featuring gesture controls, playback speed adjustment, aspect ratio toggles, and quality selection.
-- **Batch & Playlist Downloads**: Expand playlists and channels, preview individual entries, and queue bulk downloads.
-- **System Share Sheet Integration**: Share any media link directly from your browser or social media apps into LinkLift for instant analysis.
-- **Modern Material 3 UI**: Clean, responsive layout with dynamic theming, smooth transition animations, and dark mode support.
-- **Decoupled & Privacy-Focused**: No mandatory Google Play Services or Firebase tracking dependencies. Platform availability flags are resolved via lightweight GitHub CDN configuration.
+| Platform | Supported Media Types | Key Features |
+| :--- | :--- | :--- |
+| **YouTube** | Videos (up to 4K/60fps), Shorts, Playlists, Channels, Audio-only (M4A/MP3/Opus) | Native dual-stream muxing, playlist batch expansion |
+| **Instagram** | Reels, Posts, Stories, Carousels, Profile photos | Multi-slide carousel viewer, direct HD MP4 extraction |
+| **TikTok** | HD Videos, Slideshows, Audio tracks | Clean downloads without watermark |
+| **X / Twitter** | Videos, GIFs, High-res images | Multi-bitrate quality selector |
+| **Reddit** | Videos with audio (v.redd.it), Galleries | Automatic DASH/HLS audio-video merging |
+| **Pinterest** | HD Videos, Pins, Images | Full resolution image & video downloads |
+| **SoundCloud** | Tracks, Sets, Albums | High-bitrate audio extraction with metadata |
+| **1,000+ Sites** | Any website supported by `yt-dlp` (Vimeo, Dailymotion, Facebook, Twitch, etc.) | Direct stream extraction, custom format selector |
+
+---
+
+## ✨ Core Highlights
+
+- **Fast YouTube & Instagram Downloader**: Download individual videos, shorts, reels, or complete playlists with a single tap.
+- **On-Device Stream Merging (`MediaMuxer`)**: Automatically merges separate 1080p/1440p/4K video streams with high-quality AAC/M4A audio in a lightweight background foreground service.
+- **In-App Fullscreen Media Player**: Built-in media player with **AndroidX Media3 (ExoPlayer)** featuring gesture controls (volume/brightness), playback speed toggles, and quality switching.
+- **System Share Sheet Integration**: Send any link directly from YouTube, Instagram, browser, or social apps to LinkLift for instant parsing.
+- **100% Tracker-Free & Privacy-First**: Zero Firebase, Zero Amplitude, Zero Google Play Services dependencies. No tracking, no ads, completely open-source (FOSS).
+- **Clean Material 3 Design**: Dynamic Monet theming, dark mode, responsive layout, and smooth animations.
 
 ---
 
