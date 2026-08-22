@@ -1,19 +1,12 @@
 import json
+import os
 from yt_dlp import YoutubeDL
 from yt_dlp.utils import DownloadError
 
 
-# YouTube enforces PoToken (Proof of Origin) binding on streams from most
-# of its player clients. yt-dlp can still extract URLs from those clients
-# but the CDN replies HTTP 403 / "Sign in to confirm you're not a bot" when
-# we fetch them from a plain HTTP client (Android DownloadManager,
-# ExoPlayer). Only the `android_vr` client currently returns a full DASH
-# format ladder whose URLs are also fetchable without a PoToken — the
-# other clients either fail outright with "Sign in" / "Page needs to be
-# reloaded" or return only the legacy 360p progressive stream. We list
-# `android_vr` first and let yt-dlp merge in any extra formats from the
-# fallback clients when they happen to work. See yt-dlp issues
-# #15750 and #16225.
+_DEFAULT_YOUTUBE_CLIENTS_ANONYMOUS = ["android_vr", "android", "web"]
+_DEFAULT_YOUTUBE_CLIENTS_AUTHENTICATED = ["web", "android_vr", "android"]
+
 _YT_DLP_BASE_OPTIONS = {
     "quiet": True,
     "no_warnings": True,
@@ -21,17 +14,30 @@ _YT_DLP_BASE_OPTIONS = {
     "proxy": "",
     "extractor_args": {
         "youtube": {
-            "player_client": ["android_vr", "tv", "mweb", "ios", "web"],
+            "player_client": _DEFAULT_YOUTUBE_CLIENTS_ANONYMOUS,
         },
     },
 }
 
 
-def _ydl_options(**overrides):
+def _ydl_options(cookie_file_path=None, **overrides):
     options = dict(_YT_DLP_BASE_OPTIONS)
     extractor_args = options.get("extractor_args")
     if isinstance(extractor_args, dict):
         options["extractor_args"] = {key: dict(value) for key, value in extractor_args.items()}
+
+    has_cookies = bool(
+        cookie_file_path
+        and isinstance(cookie_file_path, str)
+        and os.path.exists(cookie_file_path)
+        and os.path.getsize(cookie_file_path) > 0
+    )
+
+    if has_cookies:
+        options["cookiefile"] = cookie_file_path
+        if "youtube" in options["extractor_args"]:
+            options["extractor_args"]["youtube"]["player_client"] = _DEFAULT_YOUTUBE_CLIENTS_AUTHENTICATED
+
     options.update(overrides)
     return options
 
@@ -454,24 +460,42 @@ def _entry_payload(entry, fallback_title=None, fallback_description=None):
     }
 
 
-def resolve_url(url):
+def resolve_url(url, cookie_file_path=None):
     url = (url or "").strip()
     if not url:
         raise ValueError("Empty media URL")
 
     options = _ydl_options(
+        cookie_file_path=cookie_file_path,
         noplaylist=True,
         extract_flat=False,
     )
+
+    info = None
+    last_error = None
 
     try:
         with YoutubeDL(options) as ydl:
             info = ydl.extract_info(url, download=False)
     except DownloadError as error:
-        # yt-dlp's DownloadError messages are usually verbose and prefixed
-        # with "ERROR: [extractor]". Strip that so the UI can surface a
-        # clean message ("Sign in to confirm you're not a bot.", etc.).
-        raise ValueError(_clean_yt_dlp_error(str(error)))
+        last_error = error
+
+    if not info and "youtube" in url.lower():
+        # Fallback with web + android_vr
+        fallback_options = dict(options)
+        fallback_options["extractor_args"] = {
+            "youtube": {
+                "player_client": ["android_vr", "web"],
+            }
+        }
+        try:
+            with YoutubeDL(fallback_options) as ydl:
+                info = ydl.extract_info(url, download=False)
+        except DownloadError as fallback_err:
+            last_error = fallback_err
+
+    if not info and last_error:
+        raise ValueError(_clean_yt_dlp_error(str(last_error)))
 
     entry = _best_entry(info)
     if not entry:
@@ -544,7 +568,7 @@ def _flat_entry_payload(entry):
     }
 
 
-def resolve_playlist(url, max_items=200):
+def resolve_playlist(url, cookie_file_path=None, max_items=200):
     """Expand a playlist, channel, or user feed URL into a flat list of entries.
 
     Uses yt-dlp's flat extraction so we only fetch metadata for each entry without
@@ -565,6 +589,7 @@ def resolve_playlist(url, max_items=200):
         max_items_int = 200
 
     options = _ydl_options(
+        cookie_file_path=cookie_file_path,
         noplaylist=False,
         extract_flat="in_playlist",
         playlistend=max_items_int,

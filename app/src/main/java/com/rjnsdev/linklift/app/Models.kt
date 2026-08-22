@@ -83,6 +83,8 @@ data class UserPreferences(
     val completionNotifications: Boolean = true,
     val preferredQuality: QualityPreset = QualityPreset.BestQuality,
     val downloadLocation: String = "Downloads/LinkLift",
+    val hasYouTubeCookies: Boolean = false,
+    val youtubeCookiesLastModified: Long = 0L,
 )
 
 data class MediaFormat(

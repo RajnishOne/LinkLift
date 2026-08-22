@@ -45,6 +45,13 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
+        <activity
+            android:name=".ui.YouTubeAuthActivity"
+            android:exported="false"
+            android:label="Sign in to YouTube"
+            android:theme="@style/Theme.LinkLift"
+            android:windowSoftInputMode="adjustResize" />
+
         <service
             android:name=".MergeDownloadService"
             android:exported="false"

@@ -1,12 +1,18 @@
 package com.rjnsdev.linklift.app
 
+import android.app.Activity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import com.rjnsdev.linklift.app.ui.YouTubeAuthActivity
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.CloudDownload
@@ -46,6 +52,24 @@ internal fun LinkLiftRoot(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
+
+    val youTubeAuthLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            viewModel.refreshCookieStatus()
+        }
+    }
+
+    val importCookiesFileLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri != null) {
+            viewModel.importCookiesFromUri(uri)
+        }
+    }
 
     LaunchedEffect(uiState.message) {
         val message = uiState.message ?: return@LaunchedEffect
@@ -179,6 +203,21 @@ internal fun LinkLiftRoot(
                             onWifiOnlyChanged = viewModel::updateWifiOnly,
                             onNotificationsChanged = viewModel::updateCompletionNotifications,
                             onPreferredPresetChanged = viewModel::updatePreferredQuality,
+                            onSignInYouTube = {
+                                youTubeAuthLauncher.launch(YouTubeAuthActivity.createIntent(context))
+                            },
+                            onImportCookiesFile = {
+                                importCookiesFileLauncher.launch(arrayOf("text/plain", "*/*"))
+                            },
+                            onImportCookiesClipboard = {
+                                val clipText = clipboardManager.getText()?.text.orEmpty()
+                                if (clipText.isNotBlank()) {
+                                    viewModel.importCookiesFromText(clipText)
+                                } else {
+                                    viewModel.showMessage("Clipboard is empty")
+                                }
+                            },
+                            onClearYouTubeCookies = viewModel::clearYouTubeCookies,
                         )
                     }
                 }

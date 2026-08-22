@@ -18,6 +18,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
+import com.rjnsdev.linklift.app.util.CookieHelper
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -204,6 +205,10 @@ class LinkLiftViewModel(application: Application) : AndroidViewModel(application
 
     fun clearMessage() {
         _uiState.update { it.copy(message = null) }
+    }
+
+    fun showMessage(message: String) {
+        _uiState.update { it.copy(message = message) }
     }
 
     fun selectFormat(itemIndex: Int, formatId: String) {
@@ -973,7 +978,8 @@ class LinkLiftViewModel(application: Application) : AndroidViewModel(application
             ensurePythonStarted()
             val python = Python.getInstance()
             val module = python.getModule("generic_media_resolver")
-            val payload = module.callAttr("resolve_playlist", rawUrl, BATCH_MAX_ITEMS).toString()
+            val cookiePath = CookieHelper.getCookieFilePath(appContext)
+            val payload = module.callAttr("resolve_playlist", rawUrl, cookiePath, BATCH_MAX_ITEMS).toString()
             buildPlaylistBatchFromPayload(rawUrl, payload)
         }.getOrNull()
     }
@@ -1253,6 +1259,8 @@ class LinkLiftViewModel(application: Application) : AndroidViewModel(application
                         completionNotifications = prefs[PreferenceKeys.completionNotifications] ?: true,
                         preferredQuality = QualityPreset.fromStorageKey(prefs[PreferenceKeys.preferredQuality]),
                         downloadLocation = defaultDownloadLocation(),
+                        hasYouTubeCookies = CookieHelper.hasValidCookies(appContext),
+                        youtubeCookiesLastModified = CookieHelper.getCookiesLastModified(appContext),
                     )
                 }
                 .collect { settings ->
@@ -1332,7 +1340,8 @@ class LinkLiftViewModel(application: Application) : AndroidViewModel(application
         ensurePythonStarted()
         val python = Python.getInstance()
         val module = python.getModule("generic_media_resolver")
-        val payload = module.callAttr("resolve_url", url).toString()
+        val cookiePath = CookieHelper.getCookieFilePath(appContext)
+        val payload = module.callAttr("resolve_url", url, cookiePath).toString()
         return buildPreviewFromPythonPayload(
             sourceUrl = url,
             payload = payload,
@@ -1342,7 +1351,25 @@ class LinkLiftViewModel(application: Application) : AndroidViewModel(application
 
     @Suppress("FunctionName")
     private fun yt_dlpFailureMessage(url: String, message: String): String {
-        val cleaned = message.trim().trimEnd('.').take(160)
+        var text = message.trim()
+        for (prefix in listOf("java.lang.IllegalArgumentException:", "IllegalArgumentException:", "ValueError:", "Exception:")) {
+            if (text.startsWith(prefix, ignoreCase = true)) {
+                text = text.substring(prefix.length).trim()
+            }
+        }
+        val cleaned = text.trimEnd('.').take(160)
+        val isYt = isYouTubeUrl(url)
+        val hasCookies = CookieHelper.hasValidCookies(appContext)
+        if (isYt && !hasCookies && (
+            cleaned.contains("bot", ignoreCase = true) ||
+            cleaned.contains("Sign in", ignoreCase = true) ||
+            cleaned.contains("Forbidden", ignoreCase = true) ||
+            cleaned.contains("403", ignoreCase = true) ||
+            cleaned.contains("reloaded", ignoreCase = true) ||
+            cleaned.contains("format is not available", ignoreCase = true)
+        )) {
+            return "YouTube bot protection blocked extraction. Sign in or import cookies in Settings to download."
+        }
         return "This link could not be processed: $cleaned. Try another link or update the app."
     }
 
@@ -2702,6 +2729,65 @@ class LinkLiftViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun defaultDownloadLocation(): String = "Downloads/LinkLift"
+
+    fun refreshCookieStatus() {
+        val hasCookies = CookieHelper.hasValidCookies(appContext)
+        val lastMod = CookieHelper.getCookiesLastModified(appContext)
+        _uiState.update { state ->
+            state.copy(
+                settings = state.settings.copy(
+                    hasYouTubeCookies = hasCookies,
+                    youtubeCookiesLastModified = lastMod,
+                )
+            )
+        }
+    }
+
+    fun importCookiesFromUri(uri: Uri) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = CookieHelper.importFromUri(appContext, uri)
+            result.fold(
+                onSuccess = { count ->
+                    refreshCookieStatus()
+                    _uiState.update {
+                        it.copy(message = "Successfully imported $count cookies!")
+                    }
+                },
+                onFailure = { error ->
+                    _uiState.update {
+                        it.copy(message = "Failed to import cookies: ${error.message}")
+                    }
+                },
+            )
+        }
+    }
+
+    fun importCookiesFromText(text: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = CookieHelper.importFromText(appContext, text)
+            result.fold(
+                onSuccess = { count ->
+                    refreshCookieStatus()
+                    _uiState.update {
+                        it.copy(message = "Successfully saved $count cookies!")
+                    }
+                },
+                onFailure = { error ->
+                    _uiState.update {
+                        it.copy(message = "Failed to save cookies: ${error.message}")
+                    }
+                },
+            )
+        }
+    }
+
+    fun clearYouTubeCookies() {
+        CookieHelper.clearCookies(appContext)
+        refreshCookieStatus()
+        _uiState.update {
+            it.copy(message = "YouTube cookies cleared.")
+        }
+    }
 
     private fun updateRemoteConfigFlags() {
         _uiState.update { current ->

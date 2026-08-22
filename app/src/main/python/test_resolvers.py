@@ -1,3 +1,5 @@
+import os
+import tempfile
 import unittest
 from generic_media_resolver import (
     _clean_yt_dlp_error,
@@ -9,6 +11,7 @@ from generic_media_resolver import (
     _pick_audio_pair,
     _entry_formats,
     _entry_webpage_url,
+    _ydl_options,
 )
 from instagram_resolver import (
     _build_title,
@@ -25,6 +28,26 @@ class DummyObject:
 
 
 class TestGenericMediaResolver(unittest.TestCase):
+
+    def test_ydl_options_with_and_without_cookies(self):
+        opts_plain = _ydl_options()
+        self.assertNotIn("cookiefile", opts_plain)
+        self.assertIn("android_vr", opts_plain["extractor_args"]["youtube"]["player_client"])
+
+        with tempfile.NamedTemporaryFile("w", delete=False) as f:
+            f.write("# Netscape HTTP Cookie File\n")
+            f_name = f.name
+
+        try:
+            opts_cookie = _ydl_options(cookie_file_path=f_name)
+            self.assertEqual(opts_cookie["cookiefile"], f_name)
+            self.assertEqual(
+                opts_cookie["extractor_args"]["youtube"]["player_client"],
+                ["web", "android_vr", "android"],
+            )
+        finally:
+            if os.path.exists(f_name):
+                os.remove(f_name)
 
     def test_clean_yt_dlp_error(self):
         err1 = "ERROR: [youtube] dQw4w9WgXcQ: Sign in to confirm you're not a bot. See https://..."
