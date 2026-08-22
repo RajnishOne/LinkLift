@@ -1,0 +1,6 @@
+- Upgraded embedded Python runtime to 3.13 for improved performance and stability
+- Added YouTube authentication & cookie management for restricted/member content
+- Redesigned YouTube auth interface with live session status indicators
+- Improved streaming playback with OkHttp and Media3 ExoPlayer integration
+- Enhanced video/audio stream selection with expanded codec support
+- Pinned yt-dlp to 2025.10.14 for maximum extraction reliability

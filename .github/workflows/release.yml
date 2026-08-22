@@ -66,11 +66,27 @@ jobs:
       - name: Extract Release Notes from Fastlane Changelog
         id: changelog
         run: |
-          TAG_NAME="${{ github.ref_name }}"
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            TAG_NAME="${{ github.ref_name }}"
+          else
+            TAG_NAME="${{ github.event.inputs.tag_name }}"
+          fi
+
           if [ -z "$TAG_NAME" ] || [ "$TAG_NAME" = "main" ]; then
             TAG_NAME="${{ github.event.inputs.tag_name }}"
           fi
-          
+
+          if [ -z "$TAG_NAME" ]; then
+            TAG_NAME="v2.7"
+          fi
+
+          # Ensure tag format starts with 'v' (e.g. 2.7 -> v2.7)
+          if [[ ! "$TAG_NAME" =~ ^v ]]; then
+            TAG_NAME="v$TAG_NAME"
+          fi
+
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+
           # Find latest fastlane changelog file
           LATEST_CHANGELOG=$(ls -v fastlane/metadata/android/en-US/changelogs/*.txt 2>/dev/null | tail -n 1)
           if [ -f "$LATEST_CHANGELOG" ]; then
@@ -87,10 +103,10 @@ jobs:
       - name: Create GitHub Release and Upload APK
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name || github.event.inputs.tag_name }}
-          name: LinkLift ${{ github.ref_name || github.event.inputs.tag_name }}
+          tag_name: ${{ steps.changelog.outputs.tag_name }}
+          name: LinkLift ${{ steps.changelog.outputs.tag_name }}
           body: |
-            ## LinkLift ${{ github.ref_name || github.event.inputs.tag_name }}
+            ## LinkLift ${{ steps.changelog.outputs.tag_name }}
             
             ### 📝 What's New
             ${{ steps.changelog.outputs.CHANGELOG }}
