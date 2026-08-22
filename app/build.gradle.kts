@@ -97,11 +97,8 @@ android {
 val customPythonPath = localProperty("python.path")?.takeIf { File(it).exists() }
 val detectedPython = customPythonPath ?: listOf(
     "/opt/homebrew/bin/python3.13",
-    "/opt/homebrew/bin/python3",
     "/usr/local/bin/python3.13",
-    "/usr/local/bin/python3",
-    "/usr/bin/python3.13",
-    "/usr/bin/python3"
+    "/usr/bin/python3.13"
 ).firstOrNull { File(it).exists() }
 
 chaquopy {
