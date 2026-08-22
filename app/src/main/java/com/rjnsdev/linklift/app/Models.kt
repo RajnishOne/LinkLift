@@ -205,6 +205,7 @@ data class LinkLiftUiState(
     val analysisStartedAt: Long? = null,
     val analysisLatencyMs: Long? = null,
     val downloadServiceAvailable: Boolean = true,
+    val isYouTubeAvailable: Boolean = true,
     val isSoundCloudAvailable: Boolean = true,
     val isImgurAvailable: Boolean = true,
     val showYouTubeAuthPrompt: Boolean = false,

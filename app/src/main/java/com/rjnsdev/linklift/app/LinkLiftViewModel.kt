@@ -75,6 +75,7 @@ class LinkLiftViewModel(application: Application) : AndroidViewModel(application
                 downloadLocation = defaultDownloadLocation(),
             ),
             downloadServiceAvailable = downloadManager != null,
+            isYouTubeAvailable = RemoteConfigHelper.isYouTubeAvailable,
             isSoundCloudAvailable = RemoteConfigHelper.isSoundCloudAvailable,
             isImgurAvailable = RemoteConfigHelper.isImgurAvailable,
         )
@@ -122,7 +123,7 @@ class LinkLiftViewModel(application: Application) : AndroidViewModel(application
                             mergeJobs = jobs.values.toList(),
                             previous = current.downloads,
                         )
-                        val shouldPrompt = hasFailed403 && !hasCookies && !current.showYouTubeAuthPrompt
+                        val shouldPrompt = RemoteConfigHelper.isYouTubeAvailable && hasFailed403 && !hasCookies && !current.showYouTubeAuthPrompt
                         val next = if (merged == current.downloads) current else current.copy(downloads = merged)
                         if (shouldPrompt) {
                             next.copy(
@@ -399,7 +400,7 @@ class LinkLiftViewModel(application: Application) : AndroidViewModel(application
                 val isYt = isYouTubeUrl(rawUrl)
                 val hasCookies = CookieHelper.hasValidCookies(appContext)
                 val errMsg = error.message.orEmpty()
-                val needsYouTubeAuth = isYt && (!hasCookies || errMsg.contains("bot", ignoreCase = true) || errMsg.contains("Sign in", ignoreCase = true) || errMsg.contains("403") || errMsg.contains("cookies", ignoreCase = true))
+                val needsYouTubeAuth = RemoteConfigHelper.isYouTubeAvailable && isYt && (!hasCookies || errMsg.contains("bot", ignoreCase = true) || errMsg.contains("Sign in", ignoreCase = true) || errMsg.contains("403") || errMsg.contains("cookies", ignoreCase = true))
 
                 _uiState.update {
                     it.copy(
@@ -496,7 +497,7 @@ class LinkLiftViewModel(application: Application) : AndroidViewModel(application
                 val isYt = isYouTubeUrl(rawUrl)
                 val hasCookies = CookieHelper.hasValidCookies(appContext)
                 val errMsg = error.message.orEmpty()
-                val needsYouTubeAuth = isYt && (!hasCookies || errMsg.contains("bot", ignoreCase = true) || errMsg.contains("Sign in", ignoreCase = true) || errMsg.contains("403") || errMsg.contains("cookies", ignoreCase = true) || errMsg.contains("reloaded", ignoreCase = true))
+                val needsYouTubeAuth = RemoteConfigHelper.isYouTubeAvailable && isYt && (!hasCookies || errMsg.contains("bot", ignoreCase = true) || errMsg.contains("Sign in", ignoreCase = true) || errMsg.contains("403") || errMsg.contains("cookies", ignoreCase = true) || errMsg.contains("reloaded", ignoreCase = true))
 
                 _uiState.update {
                     it.copy(
@@ -2822,6 +2823,7 @@ class LinkLiftViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun promptYouTubeAuth(reason: String? = null) {
+        if (!RemoteConfigHelper.isYouTubeAvailable) return
         _uiState.update {
             it.copy(
                 showYouTubeAuthPrompt = true,
@@ -2842,8 +2844,11 @@ class LinkLiftViewModel(application: Application) : AndroidViewModel(application
     private fun updateRemoteConfigFlags() {
         _uiState.update { current ->
             current.copy(
+                isYouTubeAvailable = RemoteConfigHelper.isYouTubeAvailable,
                 isSoundCloudAvailable = RemoteConfigHelper.isSoundCloudAvailable,
-                isImgurAvailable = RemoteConfigHelper.isImgurAvailable
+                isImgurAvailable = RemoteConfigHelper.isImgurAvailable,
+                showYouTubeAuthPrompt = if (!RemoteConfigHelper.isYouTubeAvailable) false else current.showYouTubeAuthPrompt,
+                youTubeAuthPromptReason = if (!RemoteConfigHelper.isYouTubeAvailable) null else current.youTubeAuthPromptReason,
             )
         }
     }

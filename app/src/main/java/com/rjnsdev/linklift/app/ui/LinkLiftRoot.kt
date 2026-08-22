@@ -209,6 +209,7 @@ internal fun LinkLiftRoot(
                         )
                         AppScreen.Downloads -> DownloadsScreen(
                             downloads = uiState.downloads,
+                            isYouTubeAvailable = uiState.isYouTubeAvailable,
                             onRemoveTracked = viewModel::removeTrackedDownloads,
                             onRegenerateTracked = viewModel::regenerateTrackedDownload,
                             onCancelDownload = viewModel::cancelDownload,
@@ -218,6 +219,7 @@ internal fun LinkLiftRoot(
                         )
                         AppScreen.Settings -> SettingsScreen(
                             preferences = uiState.settings,
+                            isYouTubeAvailable = uiState.isYouTubeAvailable,
                             onWifiOnlyChanged = viewModel::updateWifiOnly,
                             onNotificationsChanged = viewModel::updateCompletionNotifications,
                             onPreferredPresetChanged = viewModel::updatePreferredQuality,
@@ -241,7 +243,7 @@ internal fun LinkLiftRoot(
                 }
             }
 
-            if (uiState.showYouTubeAuthPrompt) {
+            if (uiState.isYouTubeAvailable && uiState.showYouTubeAuthPrompt) {
                 YouTubeAuthPromptDialog(
                     reason = uiState.youTubeAuthPromptReason,
                     onSignIn = {

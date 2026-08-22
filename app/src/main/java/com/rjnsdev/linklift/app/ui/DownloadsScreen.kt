@@ -75,6 +75,7 @@ import com.rjnsdev.linklift.app.ui.theme.LinkLiftTextSecondary
 @Composable
 internal fun DownloadsScreen(
     downloads: List<DownloadEntry>,
+    isYouTubeAvailable: Boolean = true,
     onRemoveTracked: (Set<Long>) -> Unit,
     onRegenerateTracked: (String?) -> Unit,
     onCancelDownload: (Long) -> Unit,
@@ -220,6 +221,7 @@ internal fun DownloadsScreen(
                     },
                     onCancel = { onCancelDownload(item.id) },
                     onPromptYouTubeAuth = onPromptYouTubeAuth,
+                    isYouTubeAvailable = isYouTubeAvailable,
                     selectionMode = selectionMode,
                     selected = item.id in selectedIds,
                     onSelectionChanged = { checked ->
@@ -241,6 +243,7 @@ private fun DownloadDetailCard(
     onOpen: (DownloadEntry) -> Unit,
     onCancel: () -> Unit,
     onPromptYouTubeAuth: () -> Unit = {},
+    isYouTubeAvailable: Boolean = true,
     selectionMode: Boolean = false,
     selected: Boolean = false,
     onSelectionChanged: (Boolean) -> Unit = {},
@@ -281,7 +284,7 @@ private fun DownloadDetailCard(
                 )
             }
 
-            if (download.state == DownloadState.Failed) {
+            if (isYouTubeAvailable && download.state == DownloadState.Failed) {
                 val isYouTubeOrAuth = download.sourceUrl?.let { isYouTubeUrl(it) } == true ||
                     download.description.contains("YouTube", ignoreCase = true) ||
                     download.description.contains("403") ||

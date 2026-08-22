@@ -64,6 +64,7 @@ import java.util.Locale
 @Composable
 internal fun SettingsScreen(
     preferences: UserPreferences,
+    isYouTubeAvailable: Boolean = true,
     onWifiOnlyChanged: (Boolean) -> Unit,
     onNotificationsChanged: (Boolean) -> Unit,
     onPreferredPresetChanged: (QualityPreset) -> Unit,
@@ -74,7 +75,7 @@ internal fun SettingsScreen(
 ) {
     var showHelpDialog by remember { mutableStateOf(false) }
 
-    if (showHelpDialog) {
+    if (isYouTubeAvailable && showHelpDialog) {
         AlertDialog(
             onDismissRequest = { showHelpDialog = false },
             icon = {
@@ -122,16 +123,18 @@ internal fun SettingsScreen(
         contentPadding = linkLiftListContentPadding(),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        item {
-            YouTubeAuthSettingCard(
-                hasCookies = preferences.hasYouTubeCookies,
-                lastModified = preferences.youtubeCookiesLastModified,
-                onSignInClick = onSignInYouTube,
-                onImportFileClick = onImportCookiesFile,
-                onImportClipboardClick = onImportCookiesClipboard,
-                onClearClick = onClearYouTubeCookies,
-                onHelpClick = { showHelpDialog = true },
-            )
+        if (isYouTubeAvailable) {
+            item {
+                YouTubeAuthSettingCard(
+                    hasCookies = preferences.hasYouTubeCookies,
+                    lastModified = preferences.youtubeCookiesLastModified,
+                    onSignInClick = onSignInYouTube,
+                    onImportFileClick = onImportCookiesFile,
+                    onImportClipboardClick = onImportCookiesClipboard,
+                    onClearClick = onClearYouTubeCookies,
+                    onHelpClick = { showHelpDialog = true },
+                )
+            }
         }
 
         item {

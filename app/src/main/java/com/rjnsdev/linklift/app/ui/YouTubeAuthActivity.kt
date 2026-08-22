@@ -47,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.rjnsdev.linklift.app.RemoteConfigHelper
 import com.rjnsdev.linklift.app.ui.theme.LinkLiftTheme
 import com.rjnsdev.linklift.app.util.CookieHelper
 import java.io.File
@@ -65,6 +66,11 @@ class YouTubeAuthActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (!RemoteConfigHelper.isYouTubeAvailable) {
+            Toast.makeText(this, "YouTube features are currently unavailable", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
         enableEdgeToEdge()
 
         setContent {

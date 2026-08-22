@@ -26,6 +26,7 @@ class RemoteConfigHelperTest {
         assertFalse(RemoteConfigHelper.isImgurAvailable)
 
         assertEquals("YouTube downloads are not supported", RemoteConfigHelper.getDisabledPlatformMessage("https://www.youtube.com/watch?v=dQw4w9WgXcQ"))
+        assertEquals("YouTube downloads are not supported", RemoteConfigHelper.getDisabledPlatformMessageForAny(listOf("https://www.youtube.com/watch?v=dQw4w9WgXcQ", "https://soundcloud.com/artist/track")))
         assertNull(RemoteConfigHelper.getDisabledPlatformMessage("https://soundcloud.com/artist/track"))
         assertEquals("Imgur downloads are not supported", RemoteConfigHelper.getDisabledPlatformMessage("https://imgur.com/gallery/12345"))
 
@@ -43,5 +44,6 @@ class RemoteConfigHelperTest {
         assertTrue(RemoteConfigHelper.isSoundCloudAvailable)
         assertTrue(RemoteConfigHelper.isImgurAvailable)
         assertNull(RemoteConfigHelper.getDisabledPlatformMessage("https://www.youtube.com/watch?v=dQw4w9WgXcQ"))
+        assertNull(RemoteConfigHelper.getDisabledPlatformMessageForAny(listOf("https://www.youtube.com/watch?v=dQw4w9WgXcQ", "https://soundcloud.com/artist/track")))
     }
 }
