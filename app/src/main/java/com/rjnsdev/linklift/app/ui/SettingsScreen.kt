@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -222,13 +223,14 @@ private fun YouTubeAuthSettingCard(
     onHelpClick: () -> Unit,
 ) {
     NeonCard {
-        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(
+                    modifier = Modifier.weight(1f),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -240,7 +242,7 @@ private fun YouTubeAuthSettingCard(
                             modifier = Modifier.padding(10.dp),
                         )
                     }
-                    Column {
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(
                             text = "YouTube Authentication",
                             style = MaterialTheme.typography.titleMedium,
@@ -255,7 +257,7 @@ private fun YouTubeAuthSettingCard(
                                     imageVector = Icons.Rounded.CheckCircle,
                                     contentDescription = null,
                                     tint = Color(0xFF4CAF50),
-                                    modifier = Modifier.padding(end = 2.dp),
+                                    modifier = Modifier.size(16.dp),
                                 )
                                 val dateStr = remember(lastModified) {
                                     if (lastModified > 0L) {
@@ -272,10 +274,10 @@ private fun YouTubeAuthSettingCard(
                                     imageVector = Icons.Rounded.WarningAmber,
                                     contentDescription = null,
                                     tint = Color(0xFFFFB74D),
-                                    modifier = Modifier.padding(end = 2.dp),
+                                    modifier = Modifier.size(16.dp),
                                 )
                                 Text(
-                                    text = "Not Configured (403 errors may occur)",
+                                    text = "Not Configured",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = Color(0xFFFFB74D),
                                 )
@@ -295,69 +297,122 @@ private fun YouTubeAuthSettingCard(
 
             Text(
                 text = if (hasCookies) {
-                    "YouTube cookies are active. High-resolution videos and audio streams will be extracted without bot checks."
+                    "YouTube session cookies are active. Protected, age-restricted, and members-only videos will use these credentials when needed."
                 } else {
-                    "Sign in with your browser or import a cookies.txt file to download YouTube videos and audio without 403 blocks."
+                    "Sign in or import cookies to download age-restricted, members-only, or protected YouTube content without bot blocks."
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = LinkLiftTextSecondary,
             )
 
-            Row(
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Button(
+                AuthOptionTile(
+                    icon = Icons.Rounded.Lock,
+                    title = if (hasCookies) "Re-authenticate in Browser" else "Sign In with Browser",
+                    subtitle = "Log into YouTube via secure in-app browser session",
+                    isPrimary = true,
                     onClick = onSignInClick,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = LinkLiftAccent,
-                        contentColor = Color.White,
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Lock,
-                        contentDescription = null,
-                        modifier = Modifier.padding(end = 6.dp),
-                    )
-                    Text(if (hasCookies) "Re-Authenticate" else "Sign In")
-                }
+                )
 
-                OutlinedButton(
+                AuthOptionTile(
+                    icon = Icons.Rounded.FileUpload,
+                    title = "Import Cookies File",
+                    subtitle = "Select a cookies.txt file from device storage",
+                    isPrimary = false,
                     onClick = onImportFileClick,
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, LinkLiftAccent.copy(alpha = 0.5f)),
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.FileUpload,
-                        contentDescription = null,
-                        tint = LinkLiftAccentBright,
-                    )
-                }
+                )
 
-                OutlinedButton(
+                AuthOptionTile(
+                    icon = Icons.Rounded.ContentPaste,
+                    title = "Paste Cookies from Clipboard",
+                    subtitle = "Import Netscape-formatted cookie text",
+                    isPrimary = false,
                     onClick = onImportClipboardClick,
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, LinkLiftAccent.copy(alpha = 0.5f)),
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.ContentPaste,
-                        contentDescription = null,
-                        tint = LinkLiftAccentBright,
-                    )
-                }
+                )
 
                 if (hasCookies) {
-                    IconButton(onClick = onClearClick) {
+                    OutlinedButton(
+                        onClick = onClearClick,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        border = BorderStroke(1.dp, Color(0xFFE57373).copy(alpha = 0.5f)),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = Color(0xFFE57373),
+                        ),
+                    ) {
                         Icon(
                             imageVector = Icons.Rounded.Delete,
-                            contentDescription = "Clear Cookies",
+                            contentDescription = null,
                             tint = Color(0xFFE57373),
+                            modifier = Modifier.padding(end = 8.dp),
+                        )
+                        Text(
+                            text = "Clear YouTube Session Cookies",
+                            style = MaterialTheme.typography.labelLarge,
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AuthOptionTile(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    isPrimary: Boolean,
+    onClick: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = RoundedCornerShape(16.dp),
+        color = if (isPrimary) LinkLiftAccent.copy(alpha = 0.22f) else LinkLiftCard.copy(alpha = 0.75f),
+        border = BorderStroke(
+            1.dp,
+            if (isPrimary) LinkLiftAccent else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
+        ),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = if (isPrimary) LinkLiftAccent else LinkLiftAccent.copy(alpha = 0.15f),
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = if (isPrimary) Color.White else LinkLiftAccentBright,
+                    modifier = Modifier
+                        .padding(9.dp)
+                        .size(20.dp),
+                )
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = Color.White,
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = LinkLiftTextSecondary,
+                )
             }
         }
     }
